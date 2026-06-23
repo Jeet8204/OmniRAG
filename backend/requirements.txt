@@ -1,0 +1,21 @@
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+python-multipart==0.0.9
+
+# LLM Integration
+google-generativeai==0.8.3
+
+# Vector Database
+qdrant-client==1.11.0
+
+# Local Embeddings
+sentence-transformers==3.1.1
+torch==2.4.1
+
+# Document Parsing
+PyMuPDF==1.24.10
+
+# Environment Variables
+python-dotenv==1.0.1

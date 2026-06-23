@@ -1,0 +1,37 @@
+# ========================
+# Python / Backend
+# ========================
+backend/venv/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ========================
+# Node / Frontend
+# ========================
+frontend/node_modules/
+frontend/dist/
+frontend/.npm/
+
+# ========================
+# Environment & Secrets
+# ========================
+.env
+backend/.env
+frontend/.env
+*.pem
+
+# ========================
+# Database & Local Storage
+# ========================
+# Ignore uploaded PDFs and local Qdrant vectors
+backend/knowledge_archive/
+qdrant_data/
+
+# ========================
+# OS & IDE Files
+# ========================
+.DS_Store
+.vscode/
+.idea/
