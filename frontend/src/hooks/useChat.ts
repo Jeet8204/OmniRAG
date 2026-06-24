@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
-// Explicitly type the source object instead of using loose 'any' signatures
 export interface SourceMaterial {
   source_type: string;
   title: string;
@@ -11,6 +10,7 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   sources?: SourceMaterial[];
+  error?: boolean;
 }
 
 export const useChat = () => {
@@ -20,12 +20,22 @@ export const useChat = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
+  // Abort controller ref — persists across renders without causing re-renders
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const uploadStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Stop generation ──────────────────────────────────────────────
+  const stopGeneration = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
+  // ── Upload ───────────────────────────────────────────────────────
   const uploadFile = useCallback(async (file: File) => {
     setIsUploading(true);
-    setUploadStatus("Uploading and indexing document...");
-    
+    setUploadStatus('Uploading and indexing document…');
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
       const response = await fetch('http://localhost:8000/api/upload', {
@@ -35,106 +45,155 @@ export const useChat = () => {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.detail || "Failed to upload file");
+        throw new Error(errData.detail || 'Failed to upload file');
       }
 
-      setUploadStatus(`Success: ${file.name} indexed permanently!`);
-      setTimeout(() => setUploadStatus(null), 4000);
+      setUploadStatus(`✓ ${file.name} indexed`);
     } catch (error: unknown) {
-      console.error("Upload error:", error);
-      const errMsg = error instanceof Error ? error.message : "An unknown transmission error occurred";
+      const errMsg =
+        error instanceof Error ? error.message : 'Unknown upload error';
       setUploadStatus(`Error: ${errMsg}`);
     } finally {
       setIsUploading(false);
+
+      // Clear status after 4 s — cancel any previous pending clear first
+      if (uploadStatusTimerRef.current) clearTimeout(uploadStatusTimerRef.current);
+      uploadStatusTimerRef.current = setTimeout(() => setUploadStatus(null), 4000);
     }
   }, []);
 
-  const sendMessage = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = { role: 'user', content: input };
-    
-    // Functional state transition prevents synchronization race conditions
-    setMessages((prev) => [...prev, userMessage]);
-    const currentInput = input;
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('http://localhost:8000/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: currentInput }),
+  // ── Retry ────────────────────────────────────────────────────────
+  const retryLast = useCallback(() => {
+    setMessages((prev) => {
+      // Drop trailing error message, re-expose the last user turn
+      const withoutError = prev.filter((_, i) => {
+        if (i === prev.length - 1 && prev[i].error) return false;
+        return true;
       });
+      return withoutError;
+    });
+    // Re-populate input with the last user message so sendMessage can pick it up
+    setMessages((prev) => {
+      const lastUser = [...prev].reverse().find((m) => m.role === 'user');
+      if (lastUser) setInput(lastUser.content);
+      return prev;
+    });
+  }, []);
 
-      if (!response.body) throw new Error('No response body returned from network endpoint');
+  // ── Send ─────────────────────────────────────────────────────────
+  const sendMessage = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!input.trim() || isLoading) return;
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      
-      // Initialize target message shell cleanly
-      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+      // Fresh abort controller for this request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
-      let bufferStr = '';
+      const userMessage: Message = { role: 'user', content: input };
+      setMessages((prev) => [...prev, userMessage]);
+      const currentInput = input;
+      setInput('');
+      setIsLoading(true);
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        // Passing true stream state flags handles broken multi-byte character strings accurately
-        bufferStr += decoder.decode(value, { stream: true });
-        const lines = bufferStr.split('\n');
-        
-        // Preserve the last line fragment in the buffer memory loop
-        bufferStr = lines.pop() || '';
-        
-        for (const line of lines) {
-          const cleanLine = line.trim();
-          if (cleanLine.startsWith('data: ')) {
-            const dataStr = cleanLine.slice(6).trim();
+      try {
+        const response = await fetch('http://localhost:8000/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: currentInput }),
+          signal: controller.signal,
+        });
+
+        if (!response.body) throw new Error('No response body');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+
+        // Seed the assistant shell
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+        let buffer = '';
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const clean = line.trim();
+            if (!clean.startsWith('data: ')) continue;
+
+            const dataStr = clean.slice(6).trim();
             if (dataStr === '[DONE]') continue;
-            
+
             try {
               const parsed = JSON.parse(dataStr);
-              
+
               if (parsed.type === 'sources') {
                 setMessages((prev) => {
                   const updated = [...prev];
-                  const lastMessage = { ...updated[updated.length - 1] };
-                  if (lastMessage && lastMessage.role === 'assistant') {
-                    lastMessage.sources = parsed.data as SourceMaterial[];
-                    updated[updated.length - 1] = lastMessage;
+                  const last = { ...updated[updated.length - 1] };
+                  if (last.role === 'assistant') {
+                    last.sources = parsed.data as SourceMaterial[];
+                    updated[updated.length - 1] = last;
                   }
                   return updated;
                 });
               } else if (parsed.type === 'token') {
                 setMessages((prev) => {
                   const updated = [...prev];
-                  const lastMessage = { ...updated[updated.length - 1] };
-                  if (lastMessage && lastMessage.role === 'assistant') {
-                    lastMessage.content += parsed.data;
-                    updated[updated.length - 1] = lastMessage;
+                  const last = { ...updated[updated.length - 1] };
+                  if (last.role === 'assistant') {
+                    last.content += parsed.data;
+                    updated[updated.length - 1] = last;
                   }
                   return updated;
                 });
               }
             } catch {
-              // Gracefully continue through fragmented token sets
+              // Swallow malformed JSON fragments
             }
           }
         }
-      }
-    } catch (error: unknown) {
-      console.error('Error streaming chat application:', error);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Sorry, something went wrong. Please check your backend database connection.' },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [input, isLoading]);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') return;
 
-  return { messages, input, setInput, sendMessage, isLoading, uploadFile, isUploading, uploadStatus };
+        console.error('Chat stream error:', error);
+
+        const isQuota = error instanceof Error &&
+          (error.message.includes('quota') ||
+          error.message.includes('429') ||
+          error.message.includes('interrupted'));
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: isQuota ? '__quota__' : '__error__',
+            error: true,
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+        abortControllerRef.current = null;
+      }
+    },
+    [input, isLoading]
+  );
+
+  return {
+    messages,
+    input,
+    setInput,
+    sendMessage,
+    isLoading,
+    stopGeneration,
+    retryLast,
+    uploadFile,
+    isUploading,
+    uploadStatus,
+  };
 };

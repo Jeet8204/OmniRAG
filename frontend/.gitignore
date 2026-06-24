@@ -1,0 +1,86 @@
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =========================
+# Node / Vite
+# =========================
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*$py.class
+
+# =========================
+# Virtual Environments
+# =========================
+venv/
+.venv/
+env/
+backend/venv/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+backend/.env
+
+# =========================
+# FastAPI / Backend
+# =========================
+uploads/
+backend/uploads/
+
+knowledge_archive/
+backend/knowledge_archive/
+
+# =========================
+# Qdrant
+# =========================
+qdrant_storage/
+qdrant_data/
+
+# =========================
+# Models
+# =========================
+models/
+checkpoints/
+
+# =========================
+# IDE
+# =========================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Windows
+# =========================
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
