@@ -21,6 +21,8 @@ python -m venv venv
 pip install -r requirements.txt
 
 
+NPM Commands
+--------------
 npm install react-markdown
 npm install tailwindcss @tailwindcss/postcss postcss
 npm install react-markdown react-syntax-highlighter
