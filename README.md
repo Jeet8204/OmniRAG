@@ -6,7 +6,7 @@ cd frontend
 npm run dev
 
 
-RUN Backend
+Run Backend
 -------------
 cd backend
 venv\Scripts\Activate
