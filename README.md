@@ -20,3 +20,9 @@ Remove-Item -Recurse -Force venv
 python -m venv venv
 .\venv\Scripts\Activate
 pip install -r requirements.txt
+
+
+npm install react-markdown
+npm install tailwindcss @tailwindcss/postcss postcss
+npm install react-markdown react-syntax-highlighter
+npm install -D @types/react-syntax-highlighter
