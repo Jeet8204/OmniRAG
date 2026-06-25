@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useAuth, authHeaders } from '../useAuth';
 
 export interface SourceMaterial {
   source_type: string;
@@ -14,13 +15,14 @@ export interface Message {
 }
 
 export const useChat = () => {
+  const { token } = useAuth();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
-  // Abort controller ref — persists across renders without causing re-renders
   const abortControllerRef = useRef<AbortController | null>(null);
   const uploadStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,6 +42,7 @@ export const useChat = () => {
     try {
       const response = await fetch('http://localhost:8000/api/upload', {
         method: 'POST',
+        headers: { ...authHeaders(token) },
         body: formData,
       });
 
@@ -50,29 +53,24 @@ export const useChat = () => {
 
       setUploadStatus(`✓ ${file.name} indexed`);
     } catch (error: unknown) {
-      const errMsg =
-        error instanceof Error ? error.message : 'Unknown upload error';
+      const errMsg = error instanceof Error ? error.message : 'Unknown upload error';
       setUploadStatus(`Error: ${errMsg}`);
     } finally {
       setIsUploading(false);
-
-      // Clear status after 4 s — cancel any previous pending clear first
       if (uploadStatusTimerRef.current) clearTimeout(uploadStatusTimerRef.current);
       uploadStatusTimerRef.current = setTimeout(() => setUploadStatus(null), 4000);
     }
-  }, []);
+  }, [token]);
 
   // ── Retry ────────────────────────────────────────────────────────
   const retryLast = useCallback(() => {
     setMessages((prev) => {
-      // Drop trailing error message, re-expose the last user turn
       const withoutError = prev.filter((_, i) => {
         if (i === prev.length - 1 && prev[i].error) return false;
         return true;
       });
       return withoutError;
     });
-    // Re-populate input with the last user message so sendMessage can pick it up
     setMessages((prev) => {
       const lastUser = [...prev].reverse().find((m) => m.role === 'user');
       if (lastUser) setInput(lastUser.content);
@@ -86,7 +84,6 @@ export const useChat = () => {
       e.preventDefault();
       if (!input.trim() || isLoading) return;
 
-      // Fresh abort controller for this request
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
@@ -99,7 +96,10 @@ export const useChat = () => {
       try {
         const response = await fetch('http://localhost:8000/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders(token),
+          },
           body: JSON.stringify({ message: currentInput }),
           signal: controller.signal,
         });
@@ -109,7 +109,6 @@ export const useChat = () => {
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
 
-        // Seed the assistant shell
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
         let buffer = '';
@@ -181,7 +180,7 @@ export const useChat = () => {
         abortControllerRef.current = null;
       }
     },
-    [input, isLoading]
+    [input, isLoading, token]
   );
 
   return {

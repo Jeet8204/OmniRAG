@@ -12,7 +12,7 @@ venv\Scripts\Activate
 docker-compose up -d
 uvicorn main:app --reload
 
-if not creating the virtual env :->
+if you have created Zip:->
 ---------------------------------- 
 deactivate
 Remove-Item -Recurse -Force venv
@@ -27,3 +27,12 @@ npm install react-markdown
 npm install tailwindcss @tailwindcss/postcss postcss
 npm install react-markdown react-syntax-highlighter
 npm install -D @types/react-syntax-highlighter
+
+
+Frontend -> Install Firebase 
+-----------------------------
+npm install firebase
+
+Backend -> FireBase - Admin
+------------------------
+pip install firebase-admin --break-system-packages
