@@ -36,3 +36,8 @@ npm install firebase
 Backend -> FireBase - Admin
 ------------------------
 pip install firebase-admin --break-system-packages
+
+
+Delete from Qdrant Database
+----------------------------
+Invoke-RestMethod -Uri "http://localhost:6333/collections/knowledge_base" -Method DELETE

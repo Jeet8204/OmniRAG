@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
         "gemini-2.5-flash",
         system_instruction=system_prompt
     )
-    ml_services["embedder"] = SentenceTransformer('all-MiniLM-L6-v2')
+    ml_services["embedder"] = SentenceTransformer('BAAI/bge-base-en-v1.5')
     ml_services["qdrant"] = QdrantClient("localhost", port=6333)
 
     logging.info("Backend is ready to accept connections!")

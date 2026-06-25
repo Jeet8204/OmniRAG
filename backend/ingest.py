@@ -9,7 +9,7 @@ from qdrant_client.models import VectorParams, Distance, PointStruct
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-EMBEDDING_DIM = 384
+EMBEDDING_DIM = 768
 
 
 def smart_chunking(text: str, chunk_size: int = 800, overlap: int = 150) -> list[str]:
