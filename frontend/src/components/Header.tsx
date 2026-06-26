@@ -25,10 +25,10 @@ const Header: React.FC<HeaderProps> = ({
   gmailLogin,
   gmailLogout,
 }) => (
-  <header className="flex items-center justify-between px-6 py-3.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
+  <header className="grid grid-cols-[1fr_auto_1fr] items-center px-6 py-3.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
 
     {/* Wordmark */}
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5 justify-self-start">
       <div className="w-7 h-7 rounded-lg bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
         <svg className="w-4 h-4 text-white dark:text-neutral-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6M4 6h16M4 18h16" />
@@ -37,8 +37,8 @@ const Header: React.FC<HeaderProps> = ({
       <span className="text-base font-medium tracking-tight">OmniRAG</span>
     </div>
 
-    {/* Mode toggle */}
-    <div className="flex items-center gap-1 p-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+    {/* Mode toggle — now in its own grid column, truly fixed/centered */}
+    <div className="flex items-center gap-1 p-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 justify-self-center">
       {(['document', 'gmail'] as ChatMode[]).map((m) => (
         <button
           key={m}
@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
     </div>
 
     {/* Right — Gmail connect / disconnect */}
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 justify-self-end">
       {mode === 'gmail' && (
         gmailToken ? (
           <button
