@@ -3,8 +3,8 @@ import uuid
 import logging
 import fitz  # PyMuPDF
 from sentence_transformers import SentenceTransformer
-from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, Distance, PointStruct
+from qdrant_client import QdrantClient # type: ignore
+from qdrant_client.models import VectorParams, Distance, PointStruct # type: ignore
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

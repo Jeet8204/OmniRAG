@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { useAuth, authHeaders } from '../useAuth';
 
+export type ChatMode = 'document' | 'gmail';
+
 export interface SourceMaterial {
   source_type: string;
   title: string;
@@ -25,6 +27,7 @@ export const useChat = () => {
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const uploadStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFetchingRef = useRef(false); // guards against duplicate in-flight requests
 
   // ── Stop generation ──────────────────────────────────────────────
   const stopGeneration = useCallback(() => {
@@ -65,11 +68,10 @@ export const useChat = () => {
   // ── Retry ────────────────────────────────────────────────────────
   const retryLast = useCallback(() => {
     setMessages((prev) => {
-      const withoutError = prev.filter((_, i) => {
-        if (i === prev.length - 1 && prev[i].error) return false;
-        return true;
-      });
-      return withoutError;
+      if (prev.length > 0 && prev[prev.length - 1].error) {
+        return prev.slice(0, -1);
+      }
+      return prev;
     });
     setMessages((prev) => {
       const lastUser = [...prev].reverse().find((m) => m.role === 'user');
@@ -80,9 +82,11 @@ export const useChat = () => {
 
   // ── Send ─────────────────────────────────────────────────────────
   const sendMessage = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.FormEvent, mode: ChatMode = 'document', gmailToken?: string) => {
       e.preventDefault();
-      if (!input.trim() || isLoading) return;
+      if (!input.trim() || isLoading || isFetchingRef.current) return;
+
+      isFetchingRef.current = true; // lock
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -94,13 +98,21 @@ export const useChat = () => {
       setIsLoading(true);
 
       try {
-        const response = await fetch('http://localhost:8000/api/chat', {
+        const endpoint = mode === 'gmail'
+          ? 'http://localhost:8000/api/gmail-chat'
+          : 'http://localhost:8000/api/chat';
+
+        const body = mode === 'gmail'
+          ? JSON.stringify({ message: currentInput, access_token: gmailToken })
+          : JSON.stringify({ message: currentInput });
+
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...authHeaders(token),
           },
-          body: JSON.stringify({ message: currentInput }),
+          body,
           signal: controller.signal,
         });
 
@@ -162,10 +174,11 @@ export const useChat = () => {
 
         console.error('Chat stream error:', error);
 
-        const isQuota = error instanceof Error &&
-          (error.message.includes('quota') ||
+        const isQuota = error instanceof Error && (
+          error.message.includes('quota') ||
           error.message.includes('429') ||
-          error.message.includes('interrupted'));
+          error.message.includes('interrupted')
+        );
 
         setMessages((prev) => [
           ...prev,
@@ -178,6 +191,7 @@ export const useChat = () => {
       } finally {
         setIsLoading(false);
         abortControllerRef.current = null;
+        isFetchingRef.current = false; // unlock
       }
     },
     [input, isLoading, token]

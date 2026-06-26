@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { PlusIcon, SendIcon, StopIcon, SpinnerIcon, CheckIcon, WarningIcon } from './icons/Icons';
+import type { ChatMode } from '../hooks/useChat';
 
 interface InputBarProps {
   input: string;
@@ -10,6 +11,9 @@ interface InputBarProps {
   uploadFile: (file: File) => void;
   isUploading: boolean;
   uploadStatus: string | null;
+  mode?: ChatMode;
+  gmailToken?: string | null;
+  gmailLogin?: () => void;
 }
 
 const InputBar: React.FC<InputBarProps> = ({
@@ -21,22 +25,34 @@ const InputBar: React.FC<InputBarProps> = ({
   uploadFile,
   isUploading,
   uploadStatus,
+  mode,
+  gmailToken,
+  gmailLogin,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) uploadFile(e.target.files[0]);
-    e.target.value = ''; // allow re-selecting the same file later
+    e.target.value = '';
   };
 
   const isError = uploadStatus?.startsWith('Error');
+  const isGmail = mode === 'gmail';
+  const gmailConnected = isGmail && !!gmailToken;
+  const canSend = input.trim() && (isGmail ? gmailConnected : true);
+
+  const placeholder = isGmail
+    ? gmailConnected
+      ? 'Ask anything about your emails…'
+      : 'Connect Gmail first…'
+    : 'Ask anything about your document…';
 
   return (
     <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-900">
       <div className="max-w-4xl mx-auto">
 
-        {/* Attachment status chip — sits above the input row, Claude-style */}
-        {uploadStatus && (
+        {/* Upload status chip — document mode only */}
+        {uploadStatus && !isGmail && (
           <div className="mb-2 flex">
             <span
               className={`inline-flex items-center gap-2 text-xs pl-1.5 pr-3 py-1.5 rounded-xl border
@@ -69,43 +85,47 @@ const InputBar: React.FC<InputBarProps> = ({
             focus-within:border-neutral-400 dark:focus-within:border-neutral-500
             rounded-2xl pl-2 pr-2 py-2 transition-colors duration-150"
         >
-          {/* Hidden file input + Claude-style circular "+" trigger */}
-          <input
-            type="file"
-            accept=".pdf"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            title="Upload PDF"
-            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
-              border border-neutral-300 dark:border-neutral-600
-              text-neutral-500 dark:text-neutral-400
-              hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-700 dark:hover:text-neutral-200
-              disabled:opacity-40 disabled:cursor-not-allowed
-              transition-colors duration-150"
-          >
-            {isUploading ? (
-              <SpinnerIcon className="w-4 h-4 animate-spin" />
-            ) : (
-              <PlusIcon className="w-4 h-4" />
-            )}
-          </button>
+          {/* Upload button — document mode only */}
+          {!isGmail && (
+            <>
+              <input
+                type="file"
+                accept=".pdf"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                title="Upload PDF"
+                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
+                  border border-neutral-300 dark:border-neutral-600
+                  text-neutral-500 dark:text-neutral-400
+                  hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-700 dark:hover:text-neutral-200
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-colors duration-150"
+              >
+                {isUploading
+                  ? <SpinnerIcon className="w-4 h-4 animate-spin" />
+                  : <PlusIcon className="w-4 h-4" />
+                }
+              </button>
+            </>
+          )}
 
+          {/* Text input */}
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && input.trim() && !isLoading) {
+              if (e.key === 'Enter' && !e.shiftKey && canSend && !isLoading) {
                 sendMessage(e as unknown as React.FormEvent);
               }
             }}
-            placeholder="Ask anything about your document…"
-            disabled={isUploading}
+            placeholder={placeholder}
+            disabled={isUploading || (isGmail && !gmailConnected)}
             className="flex-1 text-sm bg-transparent border-none outline-none py-1.5
               text-neutral-900 dark:text-neutral-100
               placeholder:text-neutral-400 dark:placeholder:text-neutral-500
@@ -113,14 +133,29 @@ const InputBar: React.FC<InputBarProps> = ({
           />
 
           {/* ↵ hint */}
-          {input.trim() && !isLoading && (
+          {canSend && !isLoading && (
             <span className="text-[11px] text-neutral-400 dark:text-neutral-500 shrink-0 select-none pb-2">↵</span>
+          )}
+
+          {/* Connect Gmail shortcut inside input bar */}
+          {isGmail && !gmailConnected && (
+            <button
+              onClick={gmailLogin}
+              className="shrink-0 text-xs px-3 py-1.5 rounded-lg
+                border border-neutral-200 dark:border-neutral-700
+                text-neutral-500 dark:text-neutral-400
+                hover:text-neutral-700 dark:hover:text-neutral-300
+                hover:bg-neutral-200 dark:hover:bg-neutral-700
+                transition-colors duration-150"
+            >
+              Connect
+            </button>
           )}
 
           {/* Send / Stop */}
           <button
             onClick={isLoading ? stopGeneration : (e) => sendMessage(e as unknown as React.FormEvent)}
-            disabled={!isLoading && !input.trim()}
+            disabled={!isLoading && !canSend}
             className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
               bg-neutral-900 dark:bg-neutral-100
               text-white dark:text-neutral-900
@@ -129,6 +164,7 @@ const InputBar: React.FC<InputBarProps> = ({
           >
             {isLoading ? <StopIcon className="w-3.5 h-3.5" /> : <SendIcon className="w-4 h-4" />}
           </button>
+
         </div>
       </div>
     </div>

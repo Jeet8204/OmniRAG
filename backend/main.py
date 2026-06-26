@@ -3,14 +3,15 @@ import json
 import logging
 import shutil
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
-from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends # type: ignore
+from fastapi.responses import StreamingResponse # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from pydantic import BaseModel
-import google.generativeai as genai
-from qdrant_client import QdrantClient
+import google.generativeai as genai # type: ignore
+from qdrant_client import QdrantClient # type: ignore
 from sentence_transformers import SentenceTransformer
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
+from routers import gmail
 
 from ingest import ingest_pdf
 from auth import init_firebase, get_current_user_id, collection_name_for_user
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("GOOGLE_API_KEY is missing from the .env file.")
 
     genai.configure(api_key=api_key)
+
     system_prompt = (
         "You are a precise and helpful knowledge assistant. "
         "Answer the user's question using ONLY the context provided below. "
@@ -52,7 +54,11 @@ async def lifespan(app: FastAPI):
     yield
     ml_services.clear()
 
+
+# ── App ──────────────────────────────────────────────────────────────────────
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(gmail.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,10 +68,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ── Health check ─────────────────────────────────────────────────────────────
 @app.get("/")
 def read_root():
     return {"status": "success", "message": "Knowledge Assistant API is running!"}
 
+
+# ── Upload ───────────────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
     message: str
 
@@ -74,11 +84,9 @@ async def upload_file(
     file: UploadFile = File(...),
     uid: str = Depends(get_current_user_id),
 ):
-    """Handles PDF uploads, indexing them into the requesting user's own collection."""
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
-    # Per-user storage directory so filenames can't collide across accounts
     user_dir = os.path.join(ARCHIVE_DIR, uid)
     os.makedirs(user_dir, exist_ok=True)
     permanent_file_path = os.path.join(user_dir, file.filename)
@@ -102,6 +110,8 @@ async def upload_file(
         logging.error(f"Upload/Ingestion error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
+
+# ── Chat ─────────────────────────────────────────────────────────────────────
 @app.post("/api/chat")
 async def chat_endpoint(
     req: ChatRequest,
@@ -111,7 +121,6 @@ async def chat_endpoint(
         collection_name = collection_name_for_user(uid)
         qdrant = ml_services["qdrant"]
 
-        # A user who hasn't uploaded anything yet has no collection — handle gracefully
         if not qdrant.collection_exists(collection_name):
             async def empty_generator():
                 yield f"data: {json.dumps({'type': 'sources', 'data': []})}\n\n".encode('utf-8')
@@ -125,18 +134,25 @@ async def chat_endpoint(
         results = qdrant.search(
             collection_name=collection_name,
             query_vector=query_vector,
-            limit=5
+            limit=5,
         )
 
         async def event_generator():
             try:
-                sources = [{"source_type": r.payload.get("source_type", "document"), "title": r.payload.get("title", "Unknown"), "page": r.payload.get("page", 1)} for r in results]
+                sources = [
+                    {
+                        "source_type": r.payload.get("source_type", "document"),
+                        "title": r.payload.get("title", "Unknown"),
+                        "page": r.payload.get("page", 1),
+                    }
+                    for r in results
+                ]
                 yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n".encode('utf-8')
 
-                context_blocks = []
-                for i, r in enumerate(results):
-                    context_blocks.append(f"[Source {i+1}: {r.payload.get('title')} - Page {r.payload.get('page')}]\n{r.payload.get('text')}")
-
+                context_blocks = [
+                    f"[Source {i+1}: {r.payload.get('title')} - Page {r.payload.get('page')}]\n{r.payload.get('text')}"
+                    for i, r in enumerate(results)
+                ]
                 full_context = "\n\n".join(context_blocks)
                 prompt = f"Context Data:\n{full_context}\n\nUser Question: {req.message}"
 
