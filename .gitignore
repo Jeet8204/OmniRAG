@@ -27,9 +27,10 @@ frontend/.env
 # ========================
 # Database & Local Storage
 # ========================
-# Ignore uploaded PDFs and local Qdrant vectors
-backend/knowledge_archive/
+# Qdrant / uploaded files
 qdrant_data/
+backend/knowledge_archive/*
+!backend/knowledge_archive/.gitkeep
 
 # ========================
 # OS & IDE Files
