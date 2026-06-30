@@ -428,21 +428,55 @@ README.md
 ## 🖼 Screenshots
 
 <!--
-All PNG screenshots are live below. Demo GIF still pending — see commented block in the hero section above.
+Tip: for a consistently clean look across all screenshots, crop tightly to just the
+app window/card before saving — avoid extra browser chrome or empty background space.
+A consistent browser width (e.g. always capture at 1280px) also keeps aspect ratios uniform.
 -->
 
-<div align="center">
+<table>
+<tr>
+<td width="50%" valign="top">
 
-| | |
-|:---:|:---:|
-| **Login Page** | **Chat Interface** |
-| <img src="./docs/screenshots/login.png" width="400"/> | <img src="./docs/screenshots/chat.png" width="400"/> |
-| **PDF Upload** | **Source Citations** |
-| <img src="./docs/screenshots/upload.png" width="400"/> | <img src="./docs/screenshots/citations.png" width="400"/> |
-| **Gmail-Based Chat** | **Swagger API Docs** |
-| <img src="./docs/screenshots/gmail-chat.png" width="400"/> | <img src="./docs/screenshots/swagger.png" width="400"/> |
+**🔐 Login Page**
+<img src="./docs/screenshots/login.png" width="100%"/>
 
-</div>
+</td>
+<td width="50%" valign="top">
+
+**💬 Chat Interface**
+<img src="./docs/screenshots/chat.png" width="100%"/>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**📤 PDF Upload**
+<img src="./docs/screenshots/upload.png" width="100%"/>
+
+</td>
+<td width="50%" valign="top">
+
+**📎 Source Citations**
+<img src="./docs/screenshots/citations.png" width="100%"/>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**📬 Gmail-Based Chat**
+<img src="./docs/screenshots/gmail-chat.png" width="100%"/>
+
+</td>
+<td width="50%" valign="top">
+
+**📘 Swagger API Docs**
+<img src="./docs/screenshots/swagger.png" width="100%"/>
+
+</td>
+</tr>
+</table>
 
 **Recommended captures:** login flow · PDF upload in progress → success · live streaming chat response · expanded source citation · Gmail connection flow · `/docs` Swagger UI · a `Invoke-RestMethod` collections list proving per-user isolation.
 
