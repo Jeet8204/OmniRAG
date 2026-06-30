@@ -534,19 +534,6 @@ knowledge-archive/
 Thumbs.db
 ```
 
-<br/>
-
-## 🏆 Resume Highlight
-
-```text
-Built OmniRAG, a multi-source AI knowledge assistant using React, FastAPI, Firebase Auth,
-Google Sign-In, Qdrant, Sentence-Transformers, and Google Gemini — enabling authenticated
-users to build private knowledge bases from PDFs, Gmail, and learning content, with
-isolated per-user vector stores and retrieval-augmented streaming chat.
-```
-
-<br/>
-
 ## 📃 License
 
 ```text
