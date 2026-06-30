@@ -23,7 +23,7 @@
 
 <div align="center">
 
-<img src="./docs/screenshots/chat-ui.png" alt="OmniRAG Chat Interface" width="850"/>
+<img src="./docs/screenshots/chat_ui.png" alt="OmniRAG Chat Interface" width="850"/>
 
 <br/><br/>
 
