@@ -28,13 +28,7 @@
 
 <br/><br/>
 
-<!--
-🎥 DEMO — once you record a walkthrough (login → upload → chat → citation) and export it as a GIF
-(ScreenToGif / Kap / Peek), drop it in docs/screenshots/demo.gif and uncomment the line below.
-GitHub renders GIFs natively, no special embedding needed.
-
 <img src="./docs/screenshots/demo.gif" alt="OmniRAG Demo" width="850"/>
--->
 
 </div>
 
@@ -538,6 +532,17 @@ knowledge-archive/
 # OS files
 .DS_Store
 Thumbs.db
+```
+
+<br/>
+
+## 🏆 Resume Highlight
+
+```text
+Built OmniRAG, a multi-source AI knowledge assistant using React, FastAPI, Firebase Auth,
+Google Sign-In, Qdrant, Sentence-Transformers, and Google Gemini — enabling authenticated
+users to build private knowledge bases from PDFs, Gmail, and learning content, with
+isolated per-user vector stores and retrieval-augmented streaming chat.
 ```
 
 <br/>
