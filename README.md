@@ -1,5 +1,7 @@
 <div align="center">
 
+<div align="center">
+
 # 🧠 OmniRAG
 
 ### Multi-Source AI Knowledge Assistant
@@ -21,9 +23,6 @@
 
 <div align="center">
 
-<!--
-🖼️ HERO SCREENSHOT — drag your main chat UI screenshot into docs/screenshots/ and update the path below
--->
 <img src="./docs/screenshots/chat-ui.png" alt="OmniRAG Chat Interface" width="850"/>
 
 <br/><br/>
