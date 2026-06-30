@@ -29,10 +29,12 @@
 <br/><br/>
 
 <!--
-🎥 DEMO — GitHub renders GIFs natively. Record a short walkthrough (login → upload → chat → citation)
-and convert to GIF (ScreenToGif / Kap / Peek), then drop it in docs/screenshots/demo.gif
--->
+🎥 DEMO — once you record a walkthrough (login → upload → chat → citation) and export it as a GIF
+(ScreenToGif / Kap / Peek), drop it in docs/screenshots/demo.gif and uncomment the line below.
+GitHub renders GIFs natively, no special embedding needed.
+
 <img src="./docs/screenshots/demo.gif" alt="OmniRAG Demo" width="850"/>
+-->
 
 </div>
 
@@ -426,8 +428,7 @@ README.md
 ## 🖼 Screenshots
 
 <!--
-Drop PNGs into ./docs/screenshots/ and uncomment the rows below as you capture them.
-Tip: keep widths consistent (~700-850px) for a clean grid.
+All PNG screenshots are live below. Demo GIF still pending — see commented block in the hero section above.
 -->
 
 <div align="center">
@@ -435,11 +436,11 @@ Tip: keep widths consistent (~700-850px) for a clean grid.
 | | |
 |:---:|:---:|
 | **Login Page** | **Chat Interface** |
-| <!-- <img src="./docs/screenshots/login.png" width="400"/> --> *(add screenshot)* | <!-- <img src="./docs/screenshots/chat.png" width="400"/> --> *(add screenshot)* |
+| <img src="./docs/screenshots/login.png" width="400"/> | <img src="./docs/screenshots/chat.png" width="400"/> |
 | **PDF Upload** | **Source Citations** |
-| <!-- <img src="./docs/screenshots/upload.png" width="400"/> --> *(add screenshot)* | <!-- <img src="./docs/screenshots/citations.png" width="400"/> --> *(add screenshot)* |
+| <img src="./docs/screenshots/upload.png" width="400"/> | <img src="./docs/screenshots/citations.png" width="400"/> |
 | **Gmail-Based Chat** | **Swagger API Docs** |
-| <!-- <img src="./docs/screenshots/gmail-chat.png" width="400"/> --> *(add screenshot)* | <!-- <img src="./docs/screenshots/swagger.png" width="400"/> --> *(add screenshot)* |
+| <img src="./docs/screenshots/gmail-chat.png" width="400"/> | <img src="./docs/screenshots/swagger.png" width="400"/> |
 
 </div>
 
