@@ -71,7 +71,7 @@ GitHub renders GIFs natively, no special embedding needed.
 **Reference**
 - [Useful Commands](#-useful-commands)
 - [Project Structure](#-project-structure)
-- [Screenshots](#-screenshots)
+- [Walkthrough](#-walkthrough)
 - [Security Notes](#-security-notes)
 - [Roadmap](#-roadmap)
 
@@ -425,60 +425,62 @@ README.md
 
 <br/>
 
-## 🖼 Screenshots
+## 🖼 Walkthrough
 
 <!--
-Tip: for a consistently clean look across all screenshots, crop tightly to just the
-app window/card before saving — avoid extra browser chrome or empty background space.
-A consistent browser width (e.g. always capture at 1280px) also keeps aspect ratios uniform.
+Tip: capture every screenshot at the same browser width (e.g. 1280px) and crop tightly
+to the app window — no extra browser chrome, no surrounding desktop/background.
+Consistent capture width keeps these thumbnails visually aligned.
 -->
 
-<table>
+<table width="100%">
 <tr>
-<td width="50%" valign="top">
-
-**🔐 Login Page**
+<td align="center" width="33%">
 <img src="./docs/screenshots/login.png" width="100%"/>
-
+<br/>
+<sub><b>🔐 Sign In</b></sub>
+<br/>
+<sub>Firebase Auth · Google Sign-In</sub>
 </td>
-<td width="50%" valign="top">
-
-**💬 Chat Interface**
+<td align="center" width="33%">
 <img src="./docs/screenshots/chat.png" width="100%"/>
-
+<br/>
+<sub><b>💬 Streaming Chat</b></sub>
+<br/>
+<sub>Real-time SSE responses</sub>
 </td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-**📤 PDF Upload**
+<td align="center" width="33%">
 <img src="./docs/screenshots/upload.png" width="100%"/>
-
-</td>
-<td width="50%" valign="top">
-
-**📎 Source Citations**
-<img src="./docs/screenshots/citations.png" width="100%"/>
-
+<br/>
+<sub><b>📤 PDF Upload</b></sub>
+<br/>
+<sub>Auto chunk + embed + index</sub>
 </td>
 </tr>
 <tr>
-<td width="50%" valign="top">
-
-**📬 Gmail-Based Chat**
-<img src="./docs/screenshots/gmail-chat.png" width="100%"/>
-
+<td align="center" width="33%">
+<img src="./docs/screenshots/citations.png" width="100%"/>
+<br/>
+<sub><b>📎 Source Citations</b></sub>
+<br/>
+<sub>Every answer, traced to its source</sub>
 </td>
-<td width="50%" valign="top">
-
-**📘 Swagger API Docs**
+<td align="center" width="33%">
+<img src="./docs/screenshots/gmail-chat.png" width="100%"/>
+<br/>
+<sub><b>📬 Gmail Knowledge</b></sub>
+<br/>
+<sub>Chat with your inbox content</sub>
+</td>
+<td align="center" width="33%">
 <img src="./docs/screenshots/swagger.png" width="100%"/>
-
+<br/>
+<sub><b>📘 Swagger Docs</b></sub>
+<br/>
+<sub>Test every route at <code>/docs</code></sub>
 </td>
 </tr>
 </table>
-
-**Recommended captures:** login flow · PDF upload in progress → success · live streaming chat response · expanded source citation · Gmail connection flow · `/docs` Swagger UI · a `Invoke-RestMethod` collections list proving per-user isolation.
 
 <br/>
 
