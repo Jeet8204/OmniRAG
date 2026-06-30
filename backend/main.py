@@ -3,36 +3,42 @@ import json
 import logging
 import shutil
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends # type: ignore
 from fastapi.responses import StreamingResponse # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from pydantic import BaseModel
+
 import google.generativeai as genai # type: ignore
 from qdrant_client import QdrantClient # type: ignore
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv # type: ignore
-from routers import gmail
 
+from routers import gmail
 from ingest import ingest_pdf
 from auth import init_firebase, get_current_user_id, collection_name_for_user
 
+
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 ml_services = {}
 
-ARCHIVE_DIR = "knowledge_archive"
+ARCHIVE_DIR = os.environ.get("ARCHIVE_DIR", "knowledge-archive")
 os.makedirs(ARCHIVE_DIR, exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logging.info("Booting up AI models and connecting to DB...")
+    logger.info("Booting up AI models and connecting to DB...")
 
     init_firebase()
 
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        raise RuntimeError("GOOGLE_API_KEY is missing from the .env file.")
+        raise RuntimeError("GOOGLE_API_KEY is missing.")
 
     genai.configure(api_key=api_key)
 
@@ -47,57 +53,84 @@ async def lifespan(app: FastAPI):
         "gemini-2.5-flash",
         system_instruction=system_prompt
     )
-    ml_services["embedder"] = SentenceTransformer('BAAI/bge-base-en-v1.5')
-    ml_services["qdrant"] = QdrantClient("localhost", port=6333)
 
-    logging.info("Backend is ready to accept connections!")
+    embedding_model = os.environ.get("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
+    ml_services["embedder"] = SentenceTransformer(embedding_model)
+
+    qdrant_url = os.environ.get("QDRANT_URL")
+    qdrant_api_key = os.environ.get("QDRANT_API_KEY") or None
+
+    if qdrant_url:
+        ml_services["qdrant"] = QdrantClient(
+            url=qdrant_url,
+            api_key=qdrant_api_key,
+        )
+        logger.info("Connected to Qdrant Cloud.")
+    else:
+        ml_services["qdrant"] = QdrantClient("localhost", port=6333)
+        logger.info("Connected to local Qdrant.")
+
+    logger.info("Backend is ready to accept connections!")
+
     yield
+
     ml_services.clear()
 
 
-# ── App ──────────────────────────────────────────────────────────────────────
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(gmail.router)
 
+cors_origins = os.environ.get(
+    "CORS_ORIGINS",
+    "http://localhost:5173"
+).split(",")
+
+cors_origins = [origin.strip() for origin in cors_origins if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ── Health check ─────────────────────────────────────────────────────────────
 @app.get("/")
 def read_root():
-    return {"status": "success", "message": "Knowledge Assistant API is running!"}
+    return {
+        "status": "success",
+        "message": "Knowledge Assistant API is running!"
+    }
 
 
-# ── Upload ───────────────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
     message: str
+
 
 @app.post("/api/upload")
 async def upload_file(
     file: UploadFile = File(...),
     uid: str = Depends(get_current_user_id),
 ):
-    if not file.filename.endswith('.pdf'):
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     user_dir = os.path.join(ARCHIVE_DIR, uid)
     os.makedirs(user_dir, exist_ok=True)
-    permanent_file_path = os.path.join(user_dir, file.filename)
+
+    safe_filename = os.path.basename(file.filename)
+    permanent_file_path = os.path.join(user_dir, safe_filename)
 
     try:
         with open(permanent_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        logging.info(f"File stored permanently at: {permanent_file_path}")
+        logger.info(f"File stored temporarily at: {permanent_file_path}")
 
         collection_name = collection_name_for_user(uid)
+
         ingest_pdf(
             permanent_file_path,
             collection_name,
@@ -105,13 +138,19 @@ async def upload_file(
             ml_services["embedder"],
         )
 
-        return {"status": "success", "message": f"Successfully stored and indexed {file.filename}"}
+        return {
+            "status": "success",
+            "message": f"Successfully stored and indexed {safe_filename}"
+        }
+
     except Exception as e:
-        logging.error(f"Upload/Ingestion error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
+        logger.error(f"Upload/Ingestion error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process file: {str(e)}"
+        )
 
 
-# ── Chat ─────────────────────────────────────────────────────────────────────
 @app.post("/api/chat")
 async def chat_endpoint(
     req: ChatRequest,
@@ -123,11 +162,17 @@ async def chat_endpoint(
 
         if not qdrant.collection_exists(collection_name):
             async def empty_generator():
-                yield f"data: {json.dumps({'type': 'sources', 'data': []})}\n\n".encode('utf-8')
+                yield f"data: {json.dumps({'type': 'sources', 'data': []})}\n\n".encode("utf-8")
+
                 msg = "I don't have any documents indexed for you yet. Please upload a PDF first."
-                yield f"data: {json.dumps({'type': 'token', 'data': msg})}\n\n".encode('utf-8')
+
+                yield f"data: {json.dumps({'type': 'token', 'data': msg})}\n\n".encode("utf-8")
                 yield b"data: [DONE]\n\n"
-            return StreamingResponse(empty_generator(), media_type="text/event-stream")
+
+            return StreamingResponse(
+                empty_generator(),
+                media_type="text/event-stream"
+            )
 
         query_vector = ml_services["embedder"].encode(req.message).tolist()
 
@@ -147,30 +192,48 @@ async def chat_endpoint(
                     }
                     for r in results
                 ]
-                yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n".encode('utf-8')
+
+                yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n".encode("utf-8")
 
                 context_blocks = [
-                    f"[Source {i+1}: {r.payload.get('title')} - Page {r.payload.get('page')}]\n{r.payload.get('text')}"
+                    f"[Source {i + 1}: {r.payload.get('title')} - Page {r.payload.get('page')}]\n{r.payload.get('text')}"
                     for i, r in enumerate(results)
                 ]
-                full_context = "\n\n".join(context_blocks)
-                prompt = f"Context Data:\n{full_context}\n\nUser Question: {req.message}"
 
-                response = ml_services["gemini"].generate_content(prompt, stream=True)
+                full_context = "\n\n".join(context_blocks)
+
+                prompt = (
+                    f"Context Data:\n{full_context}\n\n"
+                    f"User Question: {req.message}"
+                )
+
+                response = ml_services["gemini"].generate_content(
+                    prompt,
+                    stream=True
+                )
 
                 for chunk in response:
                     if chunk.text:
-                        yield f"data: {json.dumps({'type': 'token', 'data': chunk.text})}\n\n".encode('utf-8')
+                        yield f"data: {json.dumps({'type': 'token', 'data': chunk.text})}\n\n".encode("utf-8")
 
                 yield b"data: [DONE]\n\n"
 
             except Exception as e:
-                logging.error(f"Streaming error: {str(e)}")
-                yield f"data: {json.dumps({'type': 'token', 'data': '[ERROR: Connection to AI interrupted]'})}\n\n".encode('utf-8')
+                logger.error(f"Streaming error: {str(e)}")
+
+                error_msg = "[ERROR: Connection to AI interrupted]"
+
+                yield f"data: {json.dumps({'type': 'token', 'data': error_msg})}\n\n".encode("utf-8")
                 yield b"data: [DONE]\n\n"
 
-        return StreamingResponse(event_generator(), media_type="text/event-stream")
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream"
+        )
 
     except Exception as e:
-        logging.error(f"Endpoint error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error during context retrieval.")
+        logger.error(f"Endpoint error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during context retrieval."
+        )

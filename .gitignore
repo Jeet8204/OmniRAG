@@ -50,9 +50,9 @@ backend/venv/
 backend/.env
 frontend/.env
 frontend/.env.local
+frontend/.env.production
 .env.local
-
-firebase-service-account.json
+firebase-adminsdk*.json
 backend/firebase-service-account.json
 serviceAccountKey.json
 *.pem
