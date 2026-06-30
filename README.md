@@ -1,7 +1,5 @@
 <div align="center">
 
-<div align="center">
-
 # 🧠 OmniRAG
 
 ### Multi-Source AI Knowledge Assistant
@@ -23,6 +21,9 @@
 
 <div align="center">
 
+<!--
+🖼️ HERO SCREENSHOT — drag your main chat UI screenshot into docs/screenshots/ and update the path below
+-->
 <img src="./docs/screenshots/chat_ui.png" alt="OmniRAG Chat Interface" width="850"/>
 
 <br/><br/>
@@ -360,60 +361,60 @@ Invoke-RestMethod -Uri "http://localhost:6333/collections/knowledge_base" -Metho
 ## 🗃 Project Structure
 
 ```text
-backend/
-├── __pycache__/                  # gitignored
-├── knowledge-archive/            # per-user uploaded PDFs, gitignored
-├── node_modules/                 # gitignored
-├── routers/
-│   ├── __pycache__/
-│   └── gmail.py                  # Gmail OAuth + ingestion routes
-├── venv/                         # gitignored
-├── .dockerignore
-├── .env                          # gitignored
-├── auth.py                       # Firebase token verification + collection naming
-├── check_db.py                   # Qdrant inspection/debug script
-├── docker-compose.yml            # Qdrant service definition
-├── Dockerfile                    # backend container build
-├── firebase-service-account.json # gitignored
-├── ingest.py                     # PDF ingestion pipeline
-├── main.py                       # FastAPI app, routes, lifespan setup
-├── package.json / package-lock.json
-└── requirements.txt
-
-frontend/
-├── node_modules/                 # gitignored
-├── public/
-├── src/
-│   ├── components/
-│   │   ├── icons/
-│   │   ├── EmptyState.tsx
-│   │   ├── Header.tsx
-│   │   ├── InputBar.tsx
-│   │   ├── MessageBubble.tsx
-│   │   ├── MessageContent.tsx
-│   │   ├── MessageList.tsx
-│   │   ├── RetryButton.tsx
-│   │   └── ThinkingIndicator.tsx
-│   ├── hooks/
-│   │   ├── useChat.ts
-│   │   ├── useGoogleAuth.ts
-│   │   └── useIsDark.ts
-│   ├── utils/
-│   │   └── markdownComponents.tsx
-│   ├── App.css
-│   ├── App.tsx
-│   ├── AuthPage.tsx
-│   ├── firebase.ts
-│   ├── main.tsx
-│   └── useAuth.ts
-├── .env / .env.local / .env.production   # gitignored
-├── eslint.config.js
-├── index.html
-├── package.json
-└── package-lock.json
-
-README.md
-.gitignore
+AI Knowledge Assistance guide/
+│
+├── backend/
+│   ├── routers/
+│   │   └── gmail.py               # Gmail OAuth + ingestion routes
+│   ├── auth.py                    # Firebase token verification + collection naming
+│   ├── check_db.py                # Qdrant inspection/debug script
+│   ├── ingest.py                  # PDF ingestion pipeline
+│   ├── main.py                    # FastAPI app, routes, lifespan setup
+│   ├── docker-compose.yml         # Qdrant service definition
+│   ├── Dockerfile                 # backend container build
+│   ├── .dockerignore
+│   ├── requirements.txt
+│   ├── .env                       # gitignored
+│   ├── firebase-service-account.json   # gitignored
+│   ├── knowledge-archive/         # per-user uploaded PDFs, gitignored
+│   └── venv/                      # gitignored
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── icons/
+│   │   │   ├── EmptyState.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── InputBar.tsx
+│   │   │   ├── MessageBubble.tsx
+│   │   │   ├── MessageContent.tsx
+│   │   │   ├── MessageList.tsx
+│   │   │   ├── RetryButton.tsx
+│   │   │   └── ThinkingIndicator.tsx
+│   │   ├── hooks/
+│   │   │   ├── useChat.ts
+│   │   │   ├── useGoogleAuth.ts
+│   │   │   └── useIsDark.ts
+│   │   ├── utils/
+│   │   │   └── markdownComponents.tsx
+│   │   ├── App.tsx
+│   │   ├── App.css
+│   │   ├── AuthPage.tsx
+│   │   ├── firebase.ts
+│   │   ├── main.tsx
+│   │   └── useAuth.ts
+│   ├── public/
+│   ├── index.html
+│   ├── eslint.config.js
+│   ├── package.json
+│   ├── .env / .env.local / .env.production   # gitignored
+│   └── node_modules/               # gitignored
+│
+├── docs/
+│   └── screenshots/                 # README images — login, chat, demo.gif, etc.
+│
+├── README.md
+└── .gitignore
 ```
 
 <br/>
@@ -532,6 +533,10 @@ knowledge-archive/
 .DS_Store
 Thumbs.db
 ```
+
+<br/>
+
+<br/>
 
 ## 📃 License
 
