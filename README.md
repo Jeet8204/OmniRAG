@@ -1,6 +1,6 @@
 <div align="center">
 
-# <img src="./docs/assets/omni.svg" width="28" height="28" alt="OmniRAG icon" /> OmniRAG
+# <img src="./docs/assets/omni_icon.svg" width="28" height="28" alt="OmniRAG icon" /> OmniRAG
 
 ### Multi-Source AI Knowledge Assistant
 
